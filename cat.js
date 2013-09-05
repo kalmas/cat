@@ -1,4 +1,7 @@
-(function(w, d){
+requirejs(['segChain'],
+function(segChain) {
+
+(function(w, d, segChain){
 	/**
 	 * View
 	 */
@@ -17,12 +20,12 @@
 		while (cat.firstChild) {
 			cat.removeChild(cat.firstChild);
 		}
-		this.model.elements.forEach(function(elm){
+		this.model.segments.getStack().forEach(function(elm){
 			var graphic = graphics.createElement('span');
-			graphic.textContent = 0;
+			graphic.textContent = elm.avatar.chr;
 			graphic.style.position = 'absolute';
-			graphic.style.top = elm.y + 'px';
-			graphic.style.left = elm.x + 'px';
+			graphic.style.top = elm.loc.y + 'px';
+			graphic.style.left = elm.loc.x + 'px';
 			cat.appendChild(graphic);
 		})
 	};
@@ -32,7 +35,18 @@
 	 */
 	function Model(){
 		this.direction = 'north';
-		this.elements = [{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100},{x:100,y:100}];
+		this.segments = segChain.instance(
+			{avatar:{chr:'k'},loc:{x:200,y:200}}
+		);
+		this.segments.eat(
+			{avatar:{chr:'y'},loc:{x:300,y:300}}
+		);
+		this.segments.eat(
+			{avatar:{chr:'l'},loc:{x:300,y:300}}
+		);
+		this.segments.eat(
+			{avatar:{chr:'e'},loc:{x:300,y:300}}
+		);
 		this.listener;
 	}
 	Model.prototype.addDataChangeListener = function(listener){
@@ -44,9 +58,12 @@
 	Model.prototype.move = function(){
 		var adjX = 0
 			, adjY = 0
-			, headX = this.elements[0].x
-			, headY = this.elements[0].y
-			, newElm = {x:0,y:0};
+			, segments = this.segments.getStack()
+			, head = segments[0]
+			, headX = head.loc.x
+			, headY = head.loc.y
+			, newPosition = {x:0,y:0};
+		
 		switch(this.direction){
 			case 'north':
 				if(headY > 5){
@@ -69,10 +86,9 @@
 				}
 				break;
 		}
-		newElm.x = headX + adjX;
-		newElm.y = headY + adjY;
-		this.elements.unshift(newElm);
-		this.elements.pop();
+		newPosition.x = headX + adjX;
+		newPosition.y = headY + adjY;
+		this.segments.slide(newPosition);
 		
 		this.listener.dataChanged();
 	};
@@ -113,9 +129,9 @@
 	};
 	Controller.prototype.move = function(){
 		this.model.move();
-	}
+	};
 		
-	w.onload = function(){
+	(function(){
 		var field = d.getElementById('field'),
 			term = d.getElementById('terminal'),
 			step, repaint, command, translateCommand,
@@ -140,5 +156,7 @@
 		};
 		
 		step();
-	};
-})(window, window.document);
+	})();
+})(window, window.document, segChain);
+
+});
